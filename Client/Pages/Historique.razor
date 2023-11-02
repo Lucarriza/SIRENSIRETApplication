@@ -1,0 +1,54 @@
+﻿@page "/historique"
+@inject HttpClient Http
+@using System.Net.Http.Json
+@using SIRENSIRETApplication.Shared.Models;
+
+<PageTitle>Historique des saisies</PageTitle>
+
+<h1>Historique des saisies</h1>
+
+<p>Retrouvez ici l'intégralité des vérifications SIREN et SIRET effectuées ainsi que le resultat du contrôle.</p>
+
+@if (saisies == null)
+{
+    <div class="loader"></div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Type</th>
+                <th>Conformité</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Saisie saisie in saisies)
+            {
+                <tr>
+                    <td>@saisie.number</td>
+                    <td>@saisie.type</td>
+                    <td class="@(saisie.status == "VALID" ? "valid" : saisie.status == "INVALID" ? "invalid" : "incorrect")">@(saisie.status == "VALID" ? "Valide" : saisie.status == "INVALID" ? "Invalide" : saisie.status == "TOO_SHORT" ? "Incomplet" : saisie.status == "BAD_FORMAT" ? "Format incorrect" : saisie.status)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<Saisie> saisies;
+
+    protected override async void OnInitialized()
+    {
+        try
+        {
+            saisies = await Http.GetFromJsonAsync<List<Saisie>>("/api/saisies");
+            StateHasChanged(); 
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

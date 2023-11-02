@@ -1,0 +1,209 @@
+﻿@page "/validator"
+@inject HttpClient Http
+@using System.Net.Http.Json
+@using SIRENSIRETApplication.Shared.Models;
+@using System.Text.RegularExpressions;
+
+<PageTitle>Validateur</PageTitle>
+
+<h1>Validateur</h1>
+
+<p>Retrouvez ici les outils de vérification de numéros SIREN et SIRET.</p>
+
+<div class="validateurWrapper">
+    <div class="validateurBox">
+        <p role="status">Saisissez le numéro SIREN à vérifier :</p>
+        <input type="text" @bind="siren" />
+        <button class="btn-primary" @onclick="ControlSiren">Vérifier</button>
+        <p role="status" class="message @sirenTextClass">@sirenResultMessage</p>
+    </div>
+
+    <div class="validateurBox">
+        <p role="status">Saisissez le numéro SIRET à vérifier :</p>
+        <input type="text" @bind="siret" />
+        <button class="btn-primary" @onclick="ControlSiret">Vérifier</button>
+        <p role="status" class="message @siretTextClass">@siretResultMessage</p>
+    </div>
+</div>
+
+@code {
+    private string siren = "";
+    private string siret = "";
+    private string sirenResultMessage = "";
+    private string siretResultMessage = "";
+    private string sirenTextClass = "";
+    private string siretTextClass = "";
+
+    private async void ControlSiren()
+    {
+        if (siren.Length == 0)
+        {
+            sirenResultMessage = "Le numéro SIREN ne peut pas être vide.";
+            sirenTextClass = "invalid";
+            Saisie saisie = new Saisie()
+                {
+                    number = siren,
+                    date_submited = DateTime.Now,
+                    type = "SIREN",
+                    status = "EMPTY"
+                };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+            return;
+        }
+        if (!Regex.IsMatch(siren, "^[0-9]+$"))
+        {
+            sirenResultMessage = "Le numéro SIREN doit être composé de chiffres uniquement";
+            sirenTextClass = "invalid";
+            Saisie saisie = new Saisie()
+            {
+                number = siren,
+                date_submited = DateTime.Now,
+                type = "SIREN",
+                status = "BAD_FORMAT"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+            return;
+        }
+        if (siren.Length != 9)
+        {
+            sirenResultMessage = "Le numéro SIREN doit contenir 9 chiffres.";
+            sirenTextClass = "invalid";
+            Saisie saisie= new Saisie()
+            {
+                number = siren,
+                date_submited = DateTime.Now,
+                type = "SIREN",
+                status = "TOO_SHORT"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+           
+            return;
+        }
+
+        int sum = 0;
+
+        for (int i=0; i<9; i++)
+        {
+            int currentNb = int.Parse(siren[i].ToString());
+
+            if (i%2 == 1)
+                currentNb *= 2;
+
+            sum += currentNb.ToString().Sum(c => int.Parse(c.ToString()));
+        }
+
+        if (sum%10 == 0)
+        {
+            sirenResultMessage = "Le numéro SIREN est valide.";
+            sirenTextClass = "valid";
+            Saisie saisie = new Saisie()
+            {
+                number = siren,
+                date_submited = DateTime.Now,
+                type = "SIREN",
+                status = "VALID"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+        }
+        else
+        {
+            sirenResultMessage = "Le numéro SIREN est invalide.";
+            sirenTextClass = "invalid";
+            Saisie saisie = new Saisie()
+            {
+                number = siren,
+                date_submited = DateTime.Now,
+                type = "SIREN",
+                status = "INVALID"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+        }
+    }
+
+    private async void ControlSiret()
+    {
+        if(siret.Length == 0)
+		{
+			siretResultMessage = "Le numéro SIRET ne peut pas être vide.";
+			siretTextClass = "invalid";
+			Saisie saisie = new Saisie()
+			{
+				number = siret,
+				date_submited = DateTime.Now,
+				type = "SIRET",
+				status = "EMPTY"
+			};
+			await Http.PostAsJsonAsync("/api/saisie", saisie);
+			return;
+		}
+
+        if (!Regex.IsMatch(siret, "^[0-9]+$"))
+        {
+            siretResultMessage = "Le numéro SIRET doit être composé de chiffres uniquement";
+            siretTextClass = "invalid";
+            Saisie saisie = new Saisie()
+            {
+                number = siret,
+                date_submited = DateTime.Now,
+                type = "SIRET",
+                status = "BAD_FORMAT"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+            return;
+        }
+
+        if (siret.Length != 14)
+        {
+            siretResultMessage = "Le numéro SIRET doit contenir 14 chiffres.";
+            siretTextClass = "invalid";
+            Saisie saisie = new Saisie()
+            {
+                number = siret,
+                date_submited = DateTime.Now,
+                type = "SIRET",
+                status = "TOO_SHORT"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+            return;
+        }
+
+        int sum = 0;
+
+        for (int i=0; i<14; i++)
+        {
+            int currentNb = int.Parse(siret[i].ToString());
+
+            if (i%2 == 0)
+                currentNb *= 2;
+
+            sum += currentNb.ToString().Sum(c => int.Parse(c.ToString()));
+        }
+
+        if (sum%10 == 0)
+        {
+            siretResultMessage = "Le numéro SIRET est valide.";
+            siretTextClass = "valid";
+            Saisie saisie = new Saisie()
+            {
+                number = siret,
+                date_submited = DateTime.Now,
+                type = "SIRET",
+                status = "VALID"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+        }
+        else
+        {
+            siretResultMessage = "Le numéro SIRET est invalide.";
+            siretTextClass = "invalid";
+            Saisie saisie = new Saisie()
+            {
+                number = siret,
+                date_submited = DateTime.Now,
+                type = "SIRET",
+                status = "INVALID"
+            };
+            await Http.PostAsJsonAsync("/api/saisie", saisie);
+        }
+    }
+}
